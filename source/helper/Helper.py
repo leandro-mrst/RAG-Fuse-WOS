@@ -35,13 +35,13 @@ class Helper:
     #         name=f"{self.params.model.name}_{self.params.data.name}_{fold_idx}_exp"
     #     )
 
-    def get_progress_bar_callback(self):
+    def _get_progress_bar_callback(self):
         return TQDMProgressBar(
             refresh_rate=self.params.trainer.progress_bar_refresh_rate,
             process_position=0
         )
 
-    def get_lr_monitor(self):
+    def _get_lr_monitor(self):
         return LearningRateMonitor(logging_interval='step')
 
     def get_early_stopping_callback(self):
@@ -52,6 +52,14 @@ class Helper:
             mode='max'
         )
 
+    def _get_early_stopping_callback(self, monitor, mode):
+        return EarlyStopping(
+            monitor=monitor,
+            patience=self.params.trainer.patience,
+            min_delta=self.params.trainer.min_delta,
+            mode=mode
+        )
+
     def get_model_checkpoint_callback(self, fold_idx):
         return ModelCheckpoint(
             monitor="val_MRR",
@@ -60,6 +68,18 @@ class Helper:
             save_top_k=1,
             save_weights_only=True,
             mode="max"
+        )
+
+    def _get_model_checkpoint_callback(self, fold_idx, monitor, mode):
+        checkpoint_dir = f"{self.params.model_checkpoint.dir}{self.params.model.name}_{self.params.data.name}/"
+        Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+        return ModelCheckpoint(
+            monitor=monitor,
+            dirpath=checkpoint_dir,
+            filename=f"{self.params.model.name}_{self.params.data.name}_{fold_idx}",
+            save_top_k=1,
+            save_weights_only=True,
+            mode=mode
         )
 
     def _load_relevance_map(self):

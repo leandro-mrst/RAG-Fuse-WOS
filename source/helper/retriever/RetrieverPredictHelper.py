@@ -28,9 +28,12 @@ class RetrieverPredictHelper(Helper):
             # model
             if not self.params.model.zero_shot:
                 model = RetrieverModel.load_from_checkpoint(
-                    checkpoint_path=f"{self.params.model_checkpoint.dir}{self.params.model.name}_{self.params.data.name}_{fold_idx}.ckpt"
+                    checkpoint_path=f"{self.params.model_checkpoint.dir}{self.params.model.name}_{self.params.data.name}/"
+                                    f"{self.params.model.name}_{self.params.data.name}_{fold_idx}.ckpt"
                 )
                 logging.info(f"Predicting using {self.params.model.name} fine-tuned.")
+
+
             else:
                 model = RetrieverModel(self.params.model)
                 logging.info(f"Predicting using zero-shot {self.params.model.name}.")

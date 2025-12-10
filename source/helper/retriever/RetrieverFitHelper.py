@@ -33,10 +33,10 @@ class RetrieverFitHelper(Helper):
                 precision=self.params.trainer.precision,
                 logger=logger,
                 callbacks=[
-                    self.get_model_checkpoint_callback(fold_idx),  # checkpoint_callback
-                    self.get_early_stopping_callback(),  # early_stopping_callback
-                    self.get_lr_monitor(),
-                    self.get_progress_bar_callback()
+                    self._get_model_checkpoint_callback(fold_idx, monitor="val_MRR", mode="max"),
+                    self._get_early_stopping_callback(monitor="val_MRR", mode="max"),
+                    self._get_lr_monitor(),
+                    self._get_progress_bar_callback()
                 ]
             )
 

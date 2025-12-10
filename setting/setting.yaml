@@ -47,7 +47,7 @@ retriever:
     num_labels: 32
 
 prediction:
-  dir: resource/prediction/${model.name}_${data.name}/
+  dir: resource/prediction/
   fold_idx: 0
   write_interval: batch
 
