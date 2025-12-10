@@ -2,7 +2,9 @@ import logging
 import pickle
 from pathlib import Path
 
+import h5py
 import nmslib
+import numpy as np
 import pandas as pd
 import torch
 from omegaconf import OmegaConf
@@ -65,42 +67,77 @@ class RetrieverEvalHelper(Helper):
 
     def _load_predictions(self, fold_idx, split):
 
-        predictions_paths = sorted(
-            Path(f"{self.params.prediction.dir}fold_{fold_idx}/").glob("*.prd")
-        )
+        prediction_path = (f"{self.params.prediction.dir}{self.params.model.name}_{self.params.data.name}/"
+                           f"{self.params.model.name}_{self.params.data.name}_{fold_idx}.h5")
 
-        split_texts_ids = self._get_split_texts_ids(fold_idx, split)
-        split_labels_ids = self._get_split_labels_ids(fold_idx, split)
+        split_texts_ids = np.array(self._get_split_texts_ids(fold_idx, split))
+        split_labels_ids = np.array(self._get_split_labels_ids(fold_idx, split))
 
-        text_predictions = []
-        label_predictions = []
+        text_predictions = {}
+        label_predictions = {}
 
-        for path in tqdm(predictions_paths, desc="Loading predictions"):
-            for prediction in torch.load(path):
+        with h5py.File(prediction_path, 'r') as f:
+            # --- PROCESS TEXT MODALITY ---
+            if "text" in f:
+                # Read all IDs and Vectors into memory (fast binary read)
+                all_text_ids = f["text"]["text_idx"][:]
+                all_text_rpr = f["text"]["text_rpr"][:]
 
-                if prediction["modality"] == "text" and prediction["text_idx"] in split_texts_ids:
-                    text_predictions.append({
-                        "text_idx": prediction["text_idx"],
-                        "text_rpr": prediction["text_rpr"]
-                    })
+                # Find indices where the ID is in our split list
+                # np.isin creates a boolean mask
+                mask = np.isin(all_text_ids, split_texts_ids)
 
-                elif prediction["modality"] == "label" and prediction["label_idx"] in split_labels_ids:
-                    label_predictions.append({
-                        "label_idx": prediction["label_idx"],
-                        "label_rpr": prediction["label_rpr"]
-                    })
-        logging.info(f"\n{split}: added {len(text_predictions)} texts")
-        logging.info(f"{split}: added {len(label_predictions)} labels\n")
+                if np.any(mask):
+                    # Filter data using the mask
+                    selected_ids = all_text_ids[mask]
+                    selected_vecs = all_text_rpr[mask]
+
+                    # Vectorized Normalization (Much faster than looping)
+                    # axis=1 calculates norm across the embedding dimension
+                    # keepdims=True allows broadcasting for division
+                    norms = np.linalg.norm(selected_vecs, axis=1, keepdims=True)
+
+                    # Avoid division by zero
+                    norms[norms == 0] = 1e-10
+                    norm_vecs = selected_vecs / norms
+
+                    # Zip into dictionary
+                    # int(k) is used to ensure Python int keys, not numpy int types
+                    text_predictions = {int(k): v for k, v in zip(selected_ids, norm_vecs)}
+
+            # --- PROCESS LABEL MODALITY ---
+            if "label" in f:
+                all_label_ids = f["label"]["label_idx"][:]
+                all_label_rpr = f["label"]["label_rpr"][:]
+
+                mask = np.isin(all_label_ids, split_labels_ids)
+
+                if np.any(mask):
+                    selected_ids = all_label_ids[mask]
+                    selected_vecs = all_label_rpr[mask]
+
+                    norms = np.linalg.norm(selected_vecs, axis=1, keepdims=True)
+                    norms[norms == 0] = 1e-10
+                    norm_vecs = selected_vecs / norms
+
+                    label_predictions = {int(k): v for k, v in zip(selected_ids, norm_vecs)}
+
+        print(f"\n{split}: added {len(text_predictions)} texts")
+        print(f"{split}: added {len(label_predictions)} labels\n")
 
         return text_predictions, label_predictions
 
     def init_index(self, label_predictions, cls):
         added = 0
-        index = nmslib.init(method='hnsw', space='l2')
-        for prediction in tqdm(label_predictions, desc="Adding data to index"):
-            if cls in self.labels_cls[prediction["label_idx"]]:
-                index.addDataPoint(id=prediction["label_idx"], data=prediction["label_rpr"])
+        index = nmslib.init(method='hnsw', space='cosinesimil')
+        for label_idx, label_rpr in label_predictions.items():
+            if cls in self.labels_cls[label_idx]:
+                index.addDataPoint(id=label_idx, data=label_rpr)
                 added += 1
+        # for prediction in tqdm(label_predictions, desc="Adding data to index"):
+        #     if cls in self.labels_cls[prediction["label_idx"]]:
+        #         index.addDataPoint(id=prediction["label_idx"], data=prediction["label_rpr"])
+        #         added += 1
 
         index.createIndex(
             index_params=OmegaConf.to_container(self.params.eval.index),
@@ -109,30 +146,14 @@ class RetrieverEvalHelper(Helper):
         logging.info(f"Added {added} labels.")
         return index
 
-    # def retrieve(self, index, text_predictions, cls, num_nearest_neighbors):
-    #     # retrieve
-    #     ranking = {}
-    #     index.setQueryTimeParams({'efSearch': 2048})
-    #     for prediction in tqdm(text_predictions, desc="Searching"):
-    #         text_idx = prediction["text_idx"]
-    #         if cls in self.texts_cls[text_idx]:
-    #             retrieved_ids, distances = index.knnQuery(prediction["text_rpr"], k=num_nearest_neighbors)
-    #             for label_idx, distance in zip(retrieved_ids, distances):
-    #                 if f"text_{text_idx}" not in ranking:
-    #                     ranking[f"text_{text_idx}"] = {}
-    #                 ranking[f"text_{text_idx}"][f"label_{label_idx}"] = 1.0 / (distance + 1e-9)
-    #
-    #     return ranking
-
     def retrieve(self, index, text_predictions, cls, num_labels):
         # retrieve
         searched = 0
         ranking = {}
         index.setQueryTimeParams({'efSearch': 2048})
-        for prediction in tqdm(text_predictions, desc="Searching"):
-            text_idx = prediction["text_idx"]
+        for text_idx, text_rpr in tqdm(text_predictions.items(), desc="Searching"):
             if cls in self.texts_cls[text_idx]:
-                retrieved_ids, distances = index.knnQuery(prediction["text_rpr"], k=num_labels)
+                retrieved_ids, distances = index.knnQuery(text_rpr, k=num_labels)
                 for label_idx, distance in zip(retrieved_ids, distances):
                     if f"text_{text_idx}" not in ranking:
                         ranking[f"text_{text_idx}"] = {}

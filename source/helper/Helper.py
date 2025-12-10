@@ -23,10 +23,17 @@ class Helper:
         )
 
     def get_logger(self, fold_idx):
-        return loggers.TensorBoardLogger(
+        return loggers.WandbLogger(
+            project=self.params.log.project,
             save_dir=self.params.log.dir,
             name=f"{self.params.model.name}_{self.params.data.name}_{fold_idx}_exp"
         )
+
+    # def get_logger(self, fold_idx):
+    #     return loggers.TensorBoardLogger(
+    #         save_dir=self.params.log.dir,
+    #         name=f"{self.params.model.name}_{self.params.data.name}_{fold_idx}_exp"
+    #     )
 
     def get_progress_bar_callback(self):
         return TQDMProgressBar(

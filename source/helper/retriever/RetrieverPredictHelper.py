@@ -11,6 +11,7 @@ from source.model.RetrieverModel import RetrieverModel
 
 class RetrieverPredictHelper(Helper):
 
+
     def __init__(self, params):
         super(RetrieverPredictHelper, self).__init__()
         self.params = params
@@ -41,7 +42,7 @@ class RetrieverPredictHelper(Helper):
                 devices=self.params.trainer.devices,
                 max_epochs=self.params.trainer.max_epochs,
                 precision=self.params.trainer.precision,
-                callbacks=[RetrieverPredictionWriter(self.params.prediction)]
+                callbacks=[RetrieverPredictionWriter(self.params)]
             )
 
             # predicting
