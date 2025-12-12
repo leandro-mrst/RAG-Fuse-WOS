@@ -1,5 +1,5 @@
 # overrides
-data=BOOKS
+data=20NG
 model=RetrieverRoBERTa
 
 text_max_length=256
@@ -20,6 +20,7 @@ do
   time_end=$(date '+%Y-%m-%d %H:%M:%S')
   echo "$time_start,$time_end" > resource/time/sparse_retrieve_${data}_${fold_idx}.tmr
 done
+
 
 # prompt_opt
 time_start=$(date '+%Y-%m-%d %H:%M:%S')
@@ -49,8 +50,8 @@ do
   time_start=$(date '+%Y-%m-%d %H:%M:%S')
   python main.py \
     tasks=[fit] \
-    trainer.max_epochs=7 \
-    trainer.patience=5 \
+    trainer.max_epochs=5 \
+    trainer.patience=3 \
     model=$model \
     model.name=LLM_${model} \
     data=$data \
@@ -58,7 +59,7 @@ do
     data.label_max_length=$label_max_length \
     data.label_enhancement=$label_enhancement \
     data.text_features_source=$text_features_source \
-    data.batch_size=64 \
+    data.batch_size=32 \
     data.num_workers=12 \
     data.folds=[$fold_idx]
   time_end=$(date '+%Y-%m-%d %H:%M:%S')
