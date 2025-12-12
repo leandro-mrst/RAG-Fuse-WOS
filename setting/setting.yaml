@@ -12,6 +12,8 @@ trainer:
   precision: 16-mixed
   patience: 3
   min_delta: 0.01
+  monitor: val_MRR"
+  mode: max
   fast_dev_run: False
   progress_bar_refresh_rate: 10
 

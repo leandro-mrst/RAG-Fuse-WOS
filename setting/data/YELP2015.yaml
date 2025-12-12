@@ -1,0 +1,30 @@
+name: YELP2015
+dir: resource/dataset/YELP2015/
+
+folds: [ 0, 1, 2, 3, 4 ]
+splits: [ "train", "val", "test" ]
+
+
+text_max_length: 256
+label_max_length: 16
+vocabulary_size: 10000
+
+num_labels: 5
+num_texts: 700000
+num_relevant_labels: 1
+
+llm:
+  prompt_opt:
+    num_targets_labels: 5
+    num_samples_per_target_label: 16
+
+batch_size: 64
+num_workers: 12
+
+label_enhancement: RAW
+pseudo_labels: apmi_pseudo_labels
+text_features_source: TXT
+
+propensity:
+  A: 0.6
+  B: 2.6
