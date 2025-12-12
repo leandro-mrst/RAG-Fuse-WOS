@@ -49,8 +49,8 @@ do
   time_start=$(date '+%Y-%m-%d %H:%M:%S')
   python main.py \
     tasks=[fit] \
-    trainer.max_epochs=5 \
-    trainer.patience=3 \
+    trainer.max_epochs=7 \
+    trainer.patience=5 \
     model=$model \
     model.name=LLM_${model} \
     data=$data \

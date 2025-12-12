@@ -7,19 +7,19 @@ label_max_length=256
 label_enhancement=LLM
 text_features_source=TXT
 
-# sparse_retrieve
-for fold_idx in $(seq $1 $2);
-do
-  time_start=$(date '+%Y-%m-%d %H:%M:%S')
-  python main.py \
-    tasks=[sparse_retrieve] \
-    model=BM25 \
-    data=$data \
-    data.text_features_source=$text_features_source \
-    data.folds=[$fold_idx]
-  time_end=$(date '+%Y-%m-%d %H:%M:%S')
-  echo "$time_start,$time_end" > resource/time/sparse_retrieve_${data}_${fold_idx}.tmr
-done
+## sparse_retrieve
+#for fold_idx in $(seq $1 $2);
+#do
+#  time_start=$(date '+%Y-%m-%d %H:%M:%S')
+#  python main.py \
+#    tasks=[sparse_retrieve] \
+#    model=BM25 \
+#    data=$data \
+#    data.text_features_source=$text_features_source \
+#    data.folds=[$fold_idx]
+#  time_end=$(date '+%Y-%m-%d %H:%M:%S')
+#  echo "$time_start,$time_end" > resource/time/sparse_retrieve_${data}_${fold_idx}.tmr
+#done
 
 # prompt_opt
 time_start=$(date '+%Y-%m-%d %H:%M:%S')
