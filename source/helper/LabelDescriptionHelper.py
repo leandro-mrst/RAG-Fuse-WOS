@@ -1,12 +1,12 @@
 import asyncio
 import json
 import logging
+import os
 import pickle
 import random
 import time
-
-import aioboto3
 from omegaconf import OmegaConf
+from openai import AsyncOpenAI, APITimeoutError
 from tqdm import tqdm
 
 from source.helper.Helper import Helper
@@ -16,21 +16,21 @@ logging.basicConfig(level=logging.INFO)
 
 async def llm_predict(client, request):
     try:
-        response = await asyncio.wait_for(
-            client.invoke_model(
-                body=json.dumps(request["body"]),
-                modelId=request["modelId"],
-                accept="application/json",
-                contentType="application/json"
-            ),
-            timeout=request["timeout"]
+        response = await client.responses.create(
+            model=request["model"],
+            instructions=request["instructions"],
+            input=request["input"],
+            temperature=request["temperature"],
+            max_output_tokens=request["max_tokens"],
+            top_p=request["top_p"]
         )
-        response_body = await response.get("body").read()
-        request["response"] = json.loads(response_body)["generation"]
+        # Extract the generated content
+        request["response"] = response.output_text
         request["status"] = "success"
 
-    except asyncio.TimeoutError:
+    except APITimeoutError:
         request["status"] = "failure"
+        logging.warning("Timeout while predicting description")
 
     except Exception as e:
         request["status"] = "failure"
@@ -51,7 +51,14 @@ class LabelDescriptionHelper(Helper):
     def __init__(self, params):
         super(LabelDescriptionHelper, self).__init__()
         self.params = params
-        self.session = aioboto3.Session()
+
+        # Initialize OpenAI client using environment variables
+        # Expecting BASE_URL and API_KEY in .env
+        self.client = AsyncOpenAI(
+            base_url=os.getenv("BASE_URL"),
+            api_key=os.getenv("API_KEY")
+        )
+
         self.prompt = self._load_prompt("optimized_prompt")
         logging.basicConfig(level=logging.INFO)
 
@@ -128,7 +135,7 @@ class LabelDescriptionHelper(Helper):
         labels_map = self._get_labels_map(samples)
         candidates = self._get_candidates(samples)
 
-        for target_label, label_idx in tqdm(labels_map.items(), desc="Describing labels"):
+        for target_label, label_idx in tqdm(labels_map.items(), desc="Getting labels requests"):
             target_label = self._format_label(target_label)
             samples_ids = candidates[label_idx]
             select_ids = samples_ids if len(samples_ids) < num_samples else random.sample(samples_ids, num_samples)
@@ -136,48 +143,37 @@ class LabelDescriptionHelper(Helper):
 
             await requests.put(
                 {
-                    "prompt": prompt,
                     "label_idx": label_idx,
-                    "body": {
-                        "prompt": prompt,
-                        "max_gen_len": self.params.llm.prompt_opt.max_gen_len,
-                        "temperature": self.params.llm.prompt_opt.temperature,
-                        "top_p": self.params.llm.prompt_opt.top_p
-                    },
-                    "modelId": self.params.llm.prompt_opt.model,
+                    "instructions": self.params.llm.label_desc.system_instruction,
+                    "input": prompt,
+                    "max_tokens": self.params.llm.prompt_opt.max_gen_len,
+                    "temperature": self.params.llm.prompt_opt.temperature,
+                    "top_p": self.params.llm.prompt_opt.top_p,
+                    "model": self.params.llm.prompt_opt.model,
                     "timeout": self.params.llm.prompt_opt.timeout
                 }
-                #     {
-                #     "recordId": f"label_{label_idx}",
-                #     "modelInput": {
-                #         "prompt": prompt,
-                #         "max_gen_len": self.params.llm.label_desc.max_gen_len,
-                #         "temperature": self.params.llm.label_desc.temperature,
-                #         "top_p": self.params.llm.label_desc.top_p}
-                # }
             )
 
         return requests
 
     async def _process_requests(self, prompts_requests):
         labels_descriptions = {}
-        async with self.session.client('bedrock-runtime') as bedrock_client:
-            with tqdm(total=prompts_requests.qsize(), desc=f"Requesting") as pbar:
-                while not prompts_requests.empty():  # Process the queue in batches until its empty
-                    batched_requests = await self._get_batched_requests(prompts_requests)
-                    processed_requests = await process_llm_predict(
-                        bedrock_client,
-                        batched_requests
-                    )
-                    num_failures = 0
-                    for request in processed_requests:
-                        if request["status"] == "failure":
-                            num_failures += 1
-                            await prompts_requests.put(request)
-                        else:
-                            labels_descriptions[request["label_idx"]] = request["response"]
+        with tqdm(total=prompts_requests.qsize(), desc=f"Requesting") as pbar:
+            while not prompts_requests.empty():  # Process the queue in batches until its empty
+                batched_requests = await self._get_batched_requests(prompts_requests)
+                processed_requests = await process_llm_predict(
+                    self.client,
+                    batched_requests
+                )
+                num_failures = 0
+                for request in processed_requests:
+                    if request["status"] == "failure":
+                        num_failures += 1
+                        await prompts_requests.put(request)
+                    else:
+                        labels_descriptions[request["label_idx"]] = request["response"]
 
-                    pbar.update(len(batched_requests) - num_failures)
+                pbar.update(len(batched_requests) - num_failures)
 
         return labels_descriptions
 

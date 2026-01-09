@@ -22,4 +22,4 @@ wandb~=0.16.6
 numba~=0.58.1
 aiohttp~=3.9.5
 rich~=13.7.1
-boto3~=1.37.1
+openai~=2.14.0

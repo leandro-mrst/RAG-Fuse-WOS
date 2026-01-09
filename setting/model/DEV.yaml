@@ -1,0 +1,40 @@
+name: RetrieverBERT
+
+type: retriever
+zero_shot: False
+
+encoder:
+  _target_: source.encoder.RetrieverBERTEncoder.RetrieverBERTEncoder
+  architecture: bert-base-uncased
+  output_attentions: False
+  output_hidden_states: True
+  pooling:
+    _target_: source.pooling.ConcatenatePooling.ConcatenatePooling
+
+hidden_size: 3072
+
+tokenizer:
+  architecture: ${model.encoder.architecture}
+
+metric:
+  relevance_map:
+    dir: ${data.dir}
+  num_relevant_labels: ${data.num_relevant_labels}
+  index: ${eval.index}
+  scale: 20
+
+loss:
+  _target_: source.loss.RetrieverLoss.RetrieverLoss
+  params:
+    name: RetrieverLoss
+    miner:
+      relevance_map:
+        dir: ${data.dir}
+    criterion:
+      temperature: 0.07
+
+
+lr: 5e-5
+base_lr: 5e-6
+max_lr: 5e-4
+weight_decay: 1e-2

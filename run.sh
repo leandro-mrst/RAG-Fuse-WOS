@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Load .env if it exists
+if [ -f .env ]; then
+  set -a          # automatically export all variables
+  source .env
+  set +a
+else
+  echo ".env file not found"
+  exit 1
+fi
+
 # Check if the correct number of arguments is provided
 if [ "$#" -lt 3 ]; then
     echo "Usage: $0 <DATASET> <START_FOLD_IDX> <END_FOLD_IDX>"
@@ -14,7 +24,7 @@ END_FOLD=$3
 # Activate Conda environment and set Python path
 # Ensure conda is initialized for non-interactive shells
 eval "$(conda shell.bash hook)"
-conda activate RAG-Fuse
+conda activate temp
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 # Run the dataset-specific script for each fold index in the given range

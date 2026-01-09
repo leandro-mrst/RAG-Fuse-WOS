@@ -1,7 +1,7 @@
 defaults:
   - _self_
-  - model: RetrieverRoBERTa
-  - data: REUTERS
+  - model: DEV
+  - data: DEV
 
 tasks: [ "label_desc" ]
 
@@ -63,16 +63,17 @@ llm:
     max_gen_len: 256
     temperature: 0.5
     top_p: 0.5
-    model: meta.llama3-1-8b-instruct-v1:0 # arn:aws:bedrock:us-west-2:179395270822:inference-profile/us.meta.llama4-scout-17b-instruct-v1:0 #meta.llama4-scout-17b-instruct-v1:0 #meta.llama3-1-8b-instruct-v1:0
-
+    model: gpt-4o-mini
   label_desc:
     batch_size: 32
+    model: ${llm.prompt_opt.model}
     max_gen_len: 256
     temperature: 0.6
     top_p: 0.9
     timeout: 16
     num_samples: 5
     max_samples_per_label: 2
+    system_instruction: You are an expert in describing label concepts for text classification.
     request_dir: resource/llm/${data.name}/request/
     response_dir: resource/llm/${data.name}/response/
 
