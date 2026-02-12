@@ -197,6 +197,6 @@ class LabelDescriptionHelper(Helper):
 
     def _checkpoint_label_descriptions(self, labels_descriptions, fold_idx):
         logging.info(
-            f"Checkpointing {len(labels_descriptions)} labels on {self.params.data.dir}/fold_{fold_idx}/labels_descriptions.pkl")
+            f"Checkpointing {len(labels_descriptions)} labels on {self.params.data.dir}fold_{fold_idx}/labels_descriptions.pkl")
         with open(f"{self.params.data.dir}fold_{fold_idx}/labels_descriptions.pkl", "wb") as labels_desc_file:
             pickle.dump(labels_descriptions, labels_desc_file)

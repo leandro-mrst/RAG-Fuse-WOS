@@ -58,7 +58,7 @@ do
     data.label_max_length=$label_max_length \
     data.label_enhancement=$label_enhancement \
     data.text_features_source=$text_features_source \
-    data.batch_size=32 \
+    data.batch_size=64 \
     data.num_workers=12 \
     data.folds=[$fold_idx]
   time_end=$(date '+%Y-%m-%d %H:%M:%S')
@@ -116,7 +116,7 @@ do
   python main.py \
     tasks=[fuse] \
     model=$model \
-    model.name=LLM_V02_${model} \
+    model.name=LLM_${model} \
     data=$data \
     data.text_features_source=$text_features_source \
     data.folds=[$fold_idx]
@@ -132,7 +132,7 @@ do
   python main.py \
     tasks=[aggregate] \
     model=$model \
-    model.name=LLM_V02_${model} \
+    model.name=LLM_${model} \
     data=$data \
     data.text_max_length=$text_max_length \
     data.label_max_length=$label_max_length \

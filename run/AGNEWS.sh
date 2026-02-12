@@ -1,5 +1,5 @@
 # overrides
-data=ACM
+data=AGNEWS
 model=RetrieverBERT
 
 text_max_length=256
@@ -7,7 +7,7 @@ label_max_length=256
 label_enhancement=LLM
 text_features_source=TXT
 
-## sparse_retrieve
+# sparse_retrieve
 for fold_idx in $(seq $1 $2);
 do
   time_start=$(date '+%Y-%m-%d %H:%M:%S')
@@ -22,26 +22,26 @@ do
 done
 
 # prompt_opt
-#time_start=$(date '+%Y-%m-%d %H:%M:%S')
-#python main.py \
-#  tasks=[prompt_opt] \
-#  data=$data \
-#  data.text_features_source=$text_features_source
-#time_end=$(date '+%Y-%m-%d %H:%M:%S')
-#echo "$time_start,$time_end" > resource/time/prompt_opt_${data}_${fold_idx}.tmr
+time_start=$(date '+%Y-%m-%d %H:%M:%S')
+python main.py \
+  tasks=[prompt_opt] \
+  data=$data \
+  data.text_features_source=$text_features_source
+time_end=$(date '+%Y-%m-%d %H:%M:%S')
+echo "$time_start,$time_end" > resource/time/prompt_opt_${data}_${fold_idx}.tmr
 
 # label_desc
-#for fold_idx in $(seq $1 $2);
-#do
-#  time_start=$(date '+%Y-%m-%d %H:%M:%S')
-#  python main.py \
-#    tasks=[label_desc] \
-#    data=$data \
-#    data.text_features_source=$text_features_source \
-#    data.folds=[$fold_idx]
-#  time_end=$(date '+%Y-%m-%d %H:%M:%S')
-#  echo "$time_start,$time_end" > resource/time/label_desc_${data}_${fold_idx}.tmr
-#done
+for fold_idx in $(seq $1 $2);
+do
+  time_start=$(date '+%Y-%m-%d %H:%M:%S')
+  python main.py \
+    tasks=[label_desc] \
+    data=$data \
+    data.text_features_source=$text_features_source \
+    data.folds=[$fold_idx]
+  time_end=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "$time_start,$time_end" > resource/time/label_desc_${data}_${fold_idx}.tmr
+done
 
 # dense_retrieve fit
 for fold_idx in $(seq $1 $2);
@@ -51,9 +51,6 @@ do
     tasks=[fit] \
     trainer.max_epochs=5 \
     trainer.patience=3 \
-    trainer.min_delta=0.001 \
-    trainer.monitor="train_LOSS" \
-    trainer.mode="min" \
     model=$model \
     model.name=LLM_${model} \
     data=$data \
@@ -61,7 +58,7 @@ do
     data.label_max_length=$label_max_length \
     data.label_enhancement=$label_enhancement \
     data.text_features_source=$text_features_source \
-    data.batch_size=64 \
+    data.batch_size=32 \
     data.num_workers=12 \
     data.folds=[$fold_idx]
   time_end=$(date '+%Y-%m-%d %H:%M:%S')
