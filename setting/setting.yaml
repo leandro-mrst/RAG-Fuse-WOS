@@ -65,9 +65,15 @@ llm:
     max_gen_len: 256
     temperature: 0.5
     top_p: 0.5
-    model: meta.llama3-1-8b-instruct-v1:0 # arn:aws:bedrock:us-west-2:179395270822:inference-profile/us.meta.llama4-scout-17b-instruct-v1:0 #meta.llama4-scout-17b-instruct-v1:0 #meta.llama3-1-8b-instruct-v1:0
+    model: meta-llama/Llama-3.1-8B-Instruct
 
   label_desc:
+    model: ${llm.prompt_opt.model}
+    tensor_parallel_size: 1
+    gpu_memory_utilization: 0.95
+    trust_remote_code: True
+    max_num_batched_tokens: 8142
+    max_num_seqs: 256
     batch_size: 32
     max_gen_len: 256
     temperature: 0.6

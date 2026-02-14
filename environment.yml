@@ -1,0 +1,6 @@
+name: RAG-Fuse
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+prefix: /home/celso/miniconda3/envs/RAG-Fuse

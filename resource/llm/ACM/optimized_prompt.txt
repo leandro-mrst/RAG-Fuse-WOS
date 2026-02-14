@@ -1,18 +1,11 @@
-You are tasked with generating a concise and informative description for the label "{target_label}" based on examples of texts where this label is relevant (positive examples) and where it is not relevant (negative examples).
+Given a set of texts and their relevant labels, generate a concise and informative description for the label '{target_label}'.
+The description should capture the essence of the label as it is reflected in the texts, focusing on the technical aspects and highlighting the key concepts, techniques, and challenges involved.
 
-Positive examples (texts and their relevant labels):
-{positive_texts_label_pairs}
-
-Negative examples (texts and their relevant labels):
-{negative_texts_label_pairs}
+Texts and Labels:
+{text_label_pairs}
 
 Instruction:
-Write a single-paragraph description of "{target_label}" that:
-
-- Highlights key themes, concepts, and technical aspects from the positive examples
-- Uses negative examples to clarify what is *not* included
-- Distinguishes features that separate it from other labels based on negative examples
-- Is concise but detailed
-- Written in a formal, factual tone and without headings, lists, or step-by-step explanations
+Please provide a detailed and accurate description for the label '{target_label}'.
+The description should be a single paragraph summarizing the key technical aspects, concepts, and challenges related to the label as indicated in the provided texts.
 
 {target_label}:
