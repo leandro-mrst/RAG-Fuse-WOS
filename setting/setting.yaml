@@ -70,11 +70,11 @@ llm:
   label_desc:
     model: ${llm.prompt_opt.model}
     tensor_parallel_size: 1
-    gpu_memory_utilization: 0.95
+    gpu_memory_utilization: 0.92
     trust_remote_code: True
     max_num_batched_tokens: 8142
     max_num_seqs: 256
-    batch_size: 32
+    batch_size: 4096
     max_gen_len: 256
     temperature: 0.6
     top_p: 0.9
