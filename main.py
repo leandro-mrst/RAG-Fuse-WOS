@@ -4,6 +4,7 @@ import hydra
 from omegaconf import OmegaConf
 
 from source.helper.LabelDescriptionHelper import LabelDescriptionHelper
+from source.helper.PromptOptimizerHelper import PromptOptimizerHelper
 from source.helper.RankingAggregationHelper import RankingAggregationHelper
 from source.helper.RankingFusionHelper import RankingFusionHelper
 from source.helper.SparseRetrieverHelper import SparseRetrieverHelper
@@ -42,7 +43,7 @@ def fuse(params):
 
 
 def prompt_opt(params):
-    pass
+    PromptOptimizerHelper(params).run()
 
 
 def label_desc(params):

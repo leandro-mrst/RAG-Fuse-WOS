@@ -57,6 +57,12 @@ llm:
   dir: resource/llm/
 
   prompt_opt:
+    model: meta-llama/Llama-3.1-8B-Instruct
+    tensor_parallel_size: 1
+    gpu_memory_utilization: 0.92
+    max_num_seqs: 256
+    trust_remote_code: True
+    max_num_batched_tokens: 8142
     num_targets_labels: ${data.llm.prompt_opt.num_targets_labels}
     num_samples_per_target_label: ${data.llm.prompt_opt.num_samples_per_target_label}
     num_epochs: 3
@@ -65,10 +71,10 @@ llm:
     max_gen_len: 256
     temperature: 0.5
     top_p: 0.5
-    model: meta-llama/Llama-3.1-8B-Instruct
+
 
   label_desc:
-    model: ${llm.prompt_opt.model}
+    model: meta-llama/Llama-3.1-8B-Instruct
     tensor_parallel_size: 1
     gpu_memory_utilization: 0.92
     trust_remote_code: True
